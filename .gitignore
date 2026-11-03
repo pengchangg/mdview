@@ -1,0 +1,4 @@
+/target
+
+# 本机 cargo 镜像加速配置，不进仓库（CI 用官方 crates-io）
+/.cargo/

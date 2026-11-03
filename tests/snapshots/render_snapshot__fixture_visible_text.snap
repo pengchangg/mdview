@@ -1,0 +1,24 @@
+---
+source: tests/render_snapshot.rs
+expression: plain(&doc)
+---
+标题一
+
+段落文字，带 粗体、代码 和 链接 (https://example.com)。
+
+标题二
+
+- 列表项甲
+- 列表项乙
+
+fn main() {}
+
+> 引用一句话
+
+┌──────┬──────┐
+│ 列 A │ 列 B │
+├──────┼──────┤
+│ 1    │ 2    │
+└──────┴──────┘
+
+标题三
