@@ -25,9 +25,12 @@ mdview README.md
 ## 安装
 
 ```sh
+cargo install mdview-rs       # 发布后从 crates.io 安装（装上的命令仍然是 mdview）
 cargo install --path .        # 从当前仓库
 cargo build --release         # 二进制在 target/release/mdview
 ```
+
+crates.io 上的包名带 `-rs` 只是因为 `mdview` 这个名字 2020 年就被别人占用了；库名和命令都还是 `mdview`。
 
 打了 tag 之后，GitHub Actions 会发出 Linux / macOS / Windows 三个平台的压缩包，解压后把单个
 `mdview` 放进 `PATH` 即可。

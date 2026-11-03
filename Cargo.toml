@@ -1,10 +1,23 @@
 [package]
-name = "mdview"
+name = "mdview-rs"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.85"
 description = "Terminal Markdown viewer: scroll, search, outline, mermaid diagrams, live reload"
 license = "MIT"
-repository = "https://github.com/your-name/mdView"
+repository = "https://github.com/pengchangg/mdview"
+homepage = "https://github.com/pengchangg/mdview"
+keywords = ["markdown", "tui", "viewer", "mermaid", "terminal"]
+categories = ["command-line-utilities", "text-processing"]
+
+# 包名带 -rs 只是为了在 crates.io 上避名，库和命令还是 mdview。
+[lib]
+name = "mdview"
+path = "src/lib.rs"
+
+[[bin]]
+name = "mdview"
+path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4.6.7", features = ["derive"] }
