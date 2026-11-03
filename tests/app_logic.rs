@@ -329,3 +329,24 @@ fn handle_applies_a_batch_of_events() {
     assert_eq!(a.text_width(), 49);
     assert_eq!(a.scroll, 3);
 }
+
+#[test]
+fn bom_does_not_leak_into_the_first_heading() {
+    let a = app("\u{feff}# 标题\n\n正文\n", (60, 12));
+    assert_eq!(a.headings()[0].text, "标题", "BOM 得在读取时剔掉");
+    assert!(!a.doc.plain_of(0).contains('\u{feff}'));
+}
+
+#[test]
+fn ctrl_u_clears_the_search_box() {
+    let mut a = app(&long_doc(), (100, 20));
+    a.begin_search();
+    a.push_query('第');
+    a.push_query('三');
+    a.on_key(KeyEvent::new(KeyCode::Char('u'), KeyModifiers::CONTROL));
+    assert!(a.query.is_empty(), "Ctrl-U 应清空搜索词");
+    assert!(a.matches.is_empty());
+    // 其余 Ctrl-* 不该被当成字符塞进词里。
+    a.on_key(KeyEvent::new(KeyCode::Char('x'), KeyModifiers::CONTROL));
+    assert!(a.query.is_empty());
+}

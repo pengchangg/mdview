@@ -17,6 +17,16 @@ use crate::theme::Theme;
 
 pub fn draw(f: &mut Frame, app: &mut App) {
     let area = f.area();
+    if area.width < 20 || area.height < 5 {
+        // 这么小画什么都是错位，只贴一句话；按键照常能用（q 退出）。
+        app.body_rect = area;
+        app.panel_rect = Rect::default();
+        f.render_widget(
+            Paragraph::new("终端太小，请放大到 20×5 以上（q 退出）").style(app.theme.warning()),
+            area,
+        );
+        return;
+    }
     let [main, status] = Layout::vertical([Constraint::Min(0), Constraint::Length(1)]).areas(area);
 
     let pw = app.panel_width();

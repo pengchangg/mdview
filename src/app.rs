@@ -1,6 +1,6 @@
 //! 应用状态与按键逻辑（不碰终端，纯逻辑，可单测）。
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers, MouseEvent, MouseEventKind};
 use ratatui::layout::Rect;
@@ -47,7 +47,7 @@ impl App {
             .file
             .canonicalize()
             .unwrap_or_else(|_| args.file.clone());
-        let src = std::fs::read_to_string(&path)?;
+        let src = read_src(&path)?;
         let mut app = Self {
             doc: RenderedDoc::default(),
             src,
@@ -135,7 +135,7 @@ impl App {
 
     /// 重读文件；内容真变了才重渲染，避免编辑器空写抖一下。
     pub fn reload(&mut self) {
-        match std::fs::read_to_string(&self.path) {
+        match read_src(&self.path) {
             Ok(s) if s != self.src => {
                 self.src = s;
                 self.rerender();
@@ -356,6 +356,14 @@ impl App {
         }
 
         if self.editing {
+            if k.modifiers.contains(KeyModifiers::CONTROL) {
+                // Ctrl-U 清空搜索框；其余 Ctrl-* 不吃，免得把控制字符当普通字符塞进词里。
+                if matches!(k.code, KeyCode::Char('u')) {
+                    self.query.clear();
+                    self.apply_query(true);
+                }
+                return;
+            }
             match k.code {
                 KeyCode::Esc => self.cancel_search(),
                 KeyCode::Enter => {
@@ -482,4 +490,10 @@ impl App {
     pub fn headings(&self) -> &[Heading] {
         &self.doc.headings
     }
+}
+
+/// 读源文件。BOM 得剔掉，不然首行标题前面挂个空字符，大纲第一项也对不上。
+fn read_src(path: &Path) -> color_eyre::Result<String> {
+    let s = std::fs::read_to_string(path)?;
+    Ok(s.strip_prefix('\u{feff}').unwrap_or(&s).to_string())
 }

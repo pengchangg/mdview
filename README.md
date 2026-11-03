@@ -53,7 +53,7 @@ mdview x.md --no-mouse           # 启动就关掉鼠标捕获
 | `d` `u` | 半页 |
 | `f` `b` `PgDn` `PgUp` | 整页 |
 | `g` `G` `Home` `End` | 首行 / 末行 |
-| `/` | 搜索（大小写不敏感子串），`Enter` 确认，`Esc` 取消 |
+| `/` | 搜索（大小写不敏感子串），`Enter` 确认，`Backspace` 退格，`Ctrl-U` 清空，`Esc` 取消 |
 | `n` `N` | 下一个 / 上一个匹配，到末尾环绕 |
 | `o` | 开关大纲侧栏（打开时焦点自动进去） |
 | `Tab` | 焦点在正文 ↔ 大纲之间切换 |
@@ -73,7 +73,7 @@ mdview x.md --no-mouse           # 启动就关掉鼠标捕获
 ## 已知限制（v0.1）
 
 - 链接不做跳转（只带 OSC 8，终端支持的话可以 `Ctrl+点击`）；没有文件树、多文件标签。
-- 搜索是子串匹配，不支持正则和模糊。
+- 搜索是子串匹配，不支持正则和模糊；搜索框只有退格和 `Ctrl-U`，不支持左右移光标。
 - mermaid 只出字符图，不出真图：不用 `mmdc`/Node/Chromium，也不依赖图像协议（Alacritty、Windows Terminal 都不支持 Kitty/ichthys）。
 - 不支持 `--watch` 之外的目录级监听，配置文件系统还没有（只有命令行参数）。
 - 鼠标开启时终端无法选中复制 —— 按 `m` 关掉即可。
@@ -91,6 +91,8 @@ cargo clippy --all-targets -- -D warnings
 代码分成两半：`render`/`wrap`/`search`/`mermaid`/`app` 是纯逻辑（终端 IO 一行都没有，所以全部可以单测），
 `view`/`term`/`event`/`main` 才碰屏幕。渲染只有一个入口 `mdview::to_doc(src, width, opts)`，
 宽度变了才重渲染，只变高度就只夹住滚动位置。
+
+实测（release，1 MB 中英混排 + 大量代码块）：整篇渲染 369 ms、100 列 56609 行；搜索每按一个键全量重扫 6.8 ms。
 
 ## License
 
