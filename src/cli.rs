@@ -6,25 +6,25 @@ use clap::{Parser, ValueEnum};
 #[command(
     name = "mdview",
     version,
-    about = "终端里的 Markdown 预览器：滚动、搜索、大纲、mermaid、保存即刷新"
+    about = "Terminal Markdown viewer: scroll, search, outline, mermaid diagrams, live reload"
 )]
 pub struct Args {
-    /// 要预览的 markdown 文件
+    /// Markdown file to preview
     pub file: PathBuf,
 
-    /// 关闭文件监听（默认开启，保存后自动重绘）
+    /// Disable file watching (on by default: re-render when the file is saved)
     #[arg(long)]
     pub no_watch: bool,
 
-    /// 关闭鼠标捕获（关闭后可用终端原生选中复制）
+    /// Disable mouse capture (so the terminal can still select and copy text)
     #[arg(long)]
     pub no_mouse: bool,
 
-    /// 启动即展开大纲侧栏
+    /// Start with the outline sidebar open
     #[arg(long)]
     pub outline: bool,
 
-    /// 正文最大列数，超出的宽度留白（窄栏阅读）
+    /// Maximum body width in columns; extra terminal width becomes margin
     #[arg(long)]
     pub max_width: Option<u16>,
 
@@ -37,15 +37,18 @@ pub struct Args {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum MermaidMode {
-    /// 渲染成字符图形
+    /// Draw it as box-drawing art
     Auto,
-    /// 原样当代码块显示
+    /// Leave it as a plain code block
     Off,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum ThemeMode {
+    /// Follow NO_COLOR / TERM / COLORFGBG
     Auto,
+    /// Force the dark palette
     Dark,
+    /// Force the light palette
     Light,
 }

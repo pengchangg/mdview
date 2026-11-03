@@ -144,7 +144,7 @@ fn search_without_match_reports_and_does_not_move() {
     assert!(a.matches.is_empty());
     assert_eq!(a.scroll, before, "没匹配就不该滚动");
     assert!(
-        a.status.contains("无匹配"),
+        a.status.contains("no match"),
         "状态栏要说明没找到: {}",
         a.status
     );
@@ -261,7 +261,7 @@ fn reload_picks_up_new_content_and_keeps_scroll() {
         "热更新没生效"
     );
     assert_eq!(a.scroll, before, "重载不该把位置弹回顶部");
-    assert!(a.status.contains("已重载"), "{}", a.status);
+    assert!(a.status.contains("reloaded"), "{}", a.status);
 }
 
 #[test]
@@ -271,7 +271,7 @@ fn reload_of_unreadable_file_keeps_the_screen() {
     a.path = "/nonexistent/路径/nope.md".into();
     a.reload();
     assert_eq!(a.doc.lines.len(), lines, "读不到文件时保持上一版");
-    assert!(a.status.contains("读取失败"), "{}", a.status);
+    assert!(a.status.contains("read failed"), "{}", a.status);
 }
 
 #[test]

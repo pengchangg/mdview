@@ -2,7 +2,7 @@
 name = "mdview"
 version = "0.1.0"
 edition = "2024"
-description = "终端里的 Markdown 预览器：滚动、搜索、大纲、mermaid、保存即刷新"
+description = "Terminal Markdown viewer: scroll, search, outline, mermaid diagrams, live reload"
 license = "MIT"
 repository = "https://github.com/your-name/mdView"
 

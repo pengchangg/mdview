@@ -22,7 +22,8 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         app.body_rect = area;
         app.panel_rect = Rect::default();
         f.render_widget(
-            Paragraph::new("终端太小，请放大到 20×5 以上（q 退出）").style(app.theme.warning()),
+            Paragraph::new("Terminal too small - resize to at least 20x5 (q to quit)")
+                .style(app.theme.warning()),
             area,
         );
         return;
@@ -142,9 +143,9 @@ fn draw_outline(f: &mut Frame, app: &App, panel: Rect) {
     let rows = crate::render::outline_lines(&app.doc.headings, inner_width, app.sel, *th);
 
     let title = if focused {
-        "大纲  (esc 返回)"
+        "Outline  (esc back)"
     } else {
-        "大纲"
+        "Outline"
     };
     let block = Block::default()
         .borders(Borders::ALL)
@@ -177,8 +178,8 @@ fn draw_status(f: &mut Frame, app: &App, area: Rect) {
         Span::styled(
             match app.focus {
                 Focus::Text if !app.editing => " normal ",
-                Focus::Outline => " 大纲 ",
-                _ => " 搜索 ",
+                Focus::Outline => " OUTLINE ",
+                _ => " SEARCH ",
             },
             th.outline_current(),
         ),
@@ -186,7 +187,7 @@ fn draw_status(f: &mut Frame, app: &App, area: Rect) {
             format!(" {} ", app.file_name()),
             Style::default().add_modifier(Modifier::BOLD),
         ),
-        Span::styled(format!(" 行 {cur}/{total} ({pct}%) "), th.dim()),
+        Span::styled(format!(" line {cur}/{total} ({pct}%) "), th.dim()),
     ];
     if !app.doc.warnings.is_empty() {
         spans.push(Span::styled(
@@ -200,7 +201,7 @@ fn draw_status(f: &mut Frame, app: &App, area: Rect) {
             th.search_current(),
         ));
         spans.push(Span::styled(
-            format!(" {} 处 ", app.matches.len()),
+            format!(" {} hits ", app.matches.len()),
             th.dim(),
         ));
     } else if !app.query.is_empty() {
@@ -217,7 +218,7 @@ fn draw_status(f: &mut Frame, app: &App, area: Rect) {
     if !app.status.is_empty() && !app.editing {
         spans.push(Span::styled(format!(" {} ", app.status), th.dim()));
     }
-    spans.push(Span::styled(" ? 帮助 q 退出 ", th.dim()));
+    spans.push(Span::styled(" ? help  q quit ", th.dim()));
 
     f.buffer_mut().set_style(area, th.status_bar());
     f.render_widget(Paragraph::new(Line::from(spans)), area);
@@ -259,7 +260,7 @@ fn draw_help(f: &mut Frame, app: &App, area: Rect) {
     let block = Block::default()
         .borders(Borders::ALL)
         .border_style(th.frame())
-        .title(" 按键 ");
+        .title(" Keys ");
     let lines: Vec<Line<'static>> = rows
         .iter()
         .take((h as usize).saturating_sub(2))
@@ -269,8 +270,8 @@ fn draw_help(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(block, rect);
 }
 
-const HELP: &str = "j/k ↑↓ 滚动        d/u 半页      f/b 整页
-g/G 首/尾          o 大纲           m 鼠标开关
-/ 搜索  n/N 上下个匹配  Enter 确认
-Tab 焦点切到大纲    Enter 跳转        ? 关闭
-q / Esc / Ctrl-C 退出";
+const HELP: &str = "j k ↑↓ scroll       d/u half page    f/b page
+g/G top / bottom    o outline        m mouse
+/ search            n/N next/prev    Enter keep
+Tab focus outline   Enter jump       ? close
+q / Esc / Ctrl-C quit";

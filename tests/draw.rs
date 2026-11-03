@@ -107,5 +107,5 @@ fn search_line_borrows_the_status_row_not_the_body() {
 fn tiny_terminal_shows_a_hint_instead_of_crashing() {
     let mut app = app_for("# 标题\n\n正文\n");
     let screen = draw(&mut app, 10, 3);
-    assert!(screen[0].contains("终端太小"), "{screen:?}");
+    assert!(screen[0].contains("Terminal"), "{screen:?}");
 }

@@ -62,7 +62,7 @@ pub fn to_doc(src: &str, width: u16, opts: RenderOptions) -> RenderedDoc {
                 }
                 None => {
                     doc.warnings.push(format!(
-                        "mermaid 图未能渲染（{}）",
+                        "mermaid diagram failed to render ({})",
                         mermaid::kind_label(&code)
                     ));
                     push_md(&mut doc, &fenced(&code), w, opts);

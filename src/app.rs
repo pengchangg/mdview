@@ -140,10 +140,10 @@ impl App {
                 self.src = s;
                 self.rerender();
                 // rerender 会清状态，重载提示要放在它后面。
-                self.status = format!("已重载 {}", self.file_name());
+                self.status = format!("reloaded {}", self.file_name());
             }
             Ok(_) => {}
-            Err(e) => self.status = format!("读取失败：{e}"),
+            Err(e) => self.status = format!("read failed: {e}"),
         }
     }
 
@@ -225,7 +225,7 @@ impl App {
             self.status = if self.query.is_empty() {
                 String::new()
             } else {
-                format!("无匹配 “{}”", self.query)
+                format!("no match for \"{}\"", self.query)
             };
             return;
         }
@@ -250,7 +250,7 @@ impl App {
     pub fn end_search(&mut self) {
         self.editing = false;
         if self.matches.is_empty() && !self.query.is_empty() {
-            self.status = format!("无匹配 “{}”", self.query);
+            self.status = format!("no match for \"{}\"", self.query);
         }
     }
 
@@ -268,9 +268,9 @@ impl App {
     pub fn step_match(&mut self, back: bool) {
         if self.matches.is_empty() {
             self.status = if self.query.is_empty() {
-                "没有搜索词".into()
+                "no search query".into()
             } else {
-                format!("无匹配 “{}”", self.query)
+                format!("no match for \"{}\"", self.query)
             };
             return;
         }
@@ -436,9 +436,9 @@ impl App {
                 self.mouse = !self.mouse;
                 crate::term::set_mouse(self.mouse);
                 self.status = if self.mouse {
-                    "鼠标捕获：开"
+                    "mouse capture: on"
                 } else {
-                    "鼠标捕获：关（可用终端选中复制）"
+                    "mouse capture: off (terminal selection works again)"
                 }
                 .into();
             }
