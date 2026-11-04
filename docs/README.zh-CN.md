@@ -48,7 +48,8 @@ crates.io 上的包名带 `-rs` 只是因为 `mdview` 这个名字 2020 年就�
 发版只用一条命令：`scripts/tag.sh 0.4.0`。它会把版本号同步进 `Cargo.toml` 和 `Cargo.lock`，提交、
 推分支，再打 tag 推上去；随后 GitHub Actions 从那个 tag 发出四个压缩包（Linux x86_64 / aarch64、
 macOS arm64、Windows x86_64），并发到 crates.io。解压后把单个 `mdview` 放进 `PATH` 即可。
-包发好之后再跑一次 `scripts/formula.sh 0.4.0`：它读发布出来的包，重写 `Formula/mdview.rb` 里的 sha256。
+同一条流水线随后会用刚发出的包算 sha256，重写 `Formula/mdview.rb` 并提交回 `main`，brew tap 不会
+漏在一个旧版本上；`scripts/formula.sh <version>` 是这一步的手动版。
 
 版本号必须在 tag 里面就是对的：CI 的二进制是从 tag 那份代码构建的，而 publish 前的检查只会比对
 tag 和 `Cargo.toml`，不会（也没法）事后改 tag。v0.3.0 就是打在 `Cargo.toml` 还是 0.2.0 的提交上，

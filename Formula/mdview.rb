@@ -1,4 +1,4 @@
-# 由 scripts/formula.sh 0.4.1 生成，别手改：sha256 来自已发布的 tarball。
+# 由 scripts/formula.sh 0.4.1 生成（发布后由 CI 的 tap job 跑），别手改：sha256 来自已发布的 tarball。
 class Mdview < Formula
   desc "Terminal Markdown viewer: scroll, search, outline, mermaid diagrams, live reload"
   homepage "https://github.com/pengchangg/mdview"

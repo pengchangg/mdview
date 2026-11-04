@@ -54,12 +54,14 @@ One hard rule: **pure logic stays separate from terminal IO.** That split is the
 
 ## Releasing
 
-One command: `scripts/tag.sh 0.3.1`. It writes the version into `Cargo.toml` (the `[package]` one — deps use the same key, the script only replaces the first `version = ` line), syncs the root package's version line in `Cargo.lock`, commits, pushes the branch, then tags `v<version>` and pushes the tag. The tag triggers CI: `check` (fmt/clippy/test) → `build` (4 platforms: linux x86_64 + aarch64, macOS arm64, Windows x86_64) → `release` (GitHub Release with the tarballs) → `publish` (crates.io, using the repo secret `CARGO_REGISTRY_TOKEN`).
+One command: `scripts/tag.sh <version>`. It writes the version into `Cargo.toml` (the `[package]` one — deps use the same key, the script only replaces the first `version = ` line), syncs the root package's version line in `Cargo.lock`, commits, pushes the branch, then tags `v<version>` and pushes the tag. The tag triggers CI: `check` (fmt/clippy/test) → `build` (4 platforms: linux x86_64 + aarch64, macOS arm64, Windows x86_64) → `release` (GitHub Release with the tarballs) → `publish` (crates.io, using the repo secret `CARGO_REGISTRY_TOKEN`) and `tap`.
 
-Once the tarballs exist, run `scripts/formula.sh <version>` and commit `Formula/mdview.rb` on its
-own. It downloads the four archives from the release and writes their sha256 into the tap formula,
-so it can only run *after* the tag shipped — `tag.sh` must stay untouched by it, and an Intel
-macOS bottle never exists (that install path is `cargo install`, which the formula does not offer).
+`tap` is the Homebrew half, so nobody has to remember it after the tag: it re-checks out `main`,
+hashes the artifacts `build` just produced (`MDVIEW_ARCHIVE_DIR`, no re-download), regenerates
+`Formula/mdview.rb` via `scripts/formula.sh <version>` and pushes one commit. `tag.sh` never
+touches the formula, and an Intel macOS bottle never exists (that install path is `cargo install`,
+which the formula does not offer). The same script re-run by hand does the same thing from the
+published archives.
 
 Don't release by hand (bump → commit → tag). The version has to be right *inside* the tag, because CI builds the tarballs from the tag ref and the publish job only *checks* `tag == Cargo.toml` — it cannot repair a tag afterwards. v0.3.0 was tagged over `Cargo.toml = 0.2.0`, so those release tarballs print `mdview 0.2.0` and crates.io got nothing. Two rules the script encodes: refresh the lock with `cargo metadata`, never `cargo generate-lockfile` (that re-resolves and smuggles unrelated dep bumps — it moved `pest_stack_guard` 1.0.0 → 1.0.1 — into the release commit), and push the branch before the tag (one push with two refspecs can land a tag whose commit never reached the branch).
 

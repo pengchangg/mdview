@@ -64,8 +64,10 @@ back in 2020; the library and the command are both still called `mdview`.
 
 Tag a release with `scripts/tag.sh 0.4.0`: it syncs the version into `Cargo.toml` and `Cargo.lock`,
 commits, pushes, then tags. GitHub Actions publishes four archives (Linux x86_64 / aarch64, macOS
-arm64, Windows x86_64) plus the crates.io release from that tag. Afterwards run
-`scripts/formula.sh 0.4.0` — it reads the published archives and rewrites `Formula/mdview.rb`.
+arm64, Windows x86_64) plus the crates.io release from that tag. The same workflow then hashes the
+archives it just published, rewrites `Formula/mdview.rb` and commits it back to `main`, so the
+Homebrew tap never lags a release. `scripts/formula.sh <version>` does that step by hand whenever
+you need it.
 
 ## Usage
 

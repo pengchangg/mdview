@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# 生成 Formula/mdview.rb：从 GitHub Release 下载各平台的 tarball，算 sha256，写进 brew formula。
-# Homebrew 的 sha256 必须是**已发布** tarball 的哈希，所以这一步只能在 tag 之后跑：
-# tag → CI 出 tarball → scripts/formula.sh <version> → 提交 Formula/mdview.rb（tag.sh 不碰这里）。
+# 生成 Formula/mdview.rb：算出各平台 tarball 的 sha256 写进 brew formula。
+# Homebrew 要的是**已发布**产物的哈希，所以这步只能在 tag 之后跑 —— CI 的 tap job 在 release
+# 之后自动跑本脚本（产物就是刚下的 artifact，走 MDVIEW_ARCHIVE_DIR）并把结果提交回 main。
+# 手动补一次仍然用它：
 #
-# 用法: scripts/formula.sh 0.4.0     # 写 Formula/mdview.rb，不改版本号以外的任何文件
+# 用法: scripts/formula.sh 0.4.0                              # 从 release 页面下载算哈希
+#       MDVIEW_ARCHIVE_DIR=artifacts scripts/formula.sh 0.4.0 # 用已经下好的 tarball
 set -euo pipefail
 
 ver="${1:-}"
@@ -32,8 +34,16 @@ for outer in on_linux on_macos; do
         IFS='|' read -r o inner target <<<"$row"
         [ "$o" = "$outer" ] || continue
         url="https://github.com/$repo/releases/download/v$ver/mdview-$target.tar.gz"
-        # -f：404 时不落盘，好区分「这个版本还没出这个平台」。代理照常走 https_proxy 环境变量。
-        if ! hash="$(curl -fsSL --retry 3 --retry-delay 2 "$url" | sha256sum | cut -d' ' -f1)"; then
+        if [ -n "${MDVIEW_ARCHIVE_DIR:-}" ]; then
+            # CI 里 tarball 已在本地（download-artifact 按 artifact 名分了一层），别再下一遍。
+            file="$(find "$MDVIEW_ARCHIVE_DIR" -name "mdview-$target.tar.gz" -print -quit 2>/dev/null)" || file=""
+            if [ -z "$file" ]; then
+                missing+=("$target")
+                continue
+            fi
+            hash="$(sha256sum "$file" | cut -d' ' -f1)"
+        elif ! hash="$(curl -fsSL --retry 3 --retry-delay 2 "$url" | sha256sum | cut -d' ' -f1)"; then
+            # -f：404 时不落盘，好区分「这个版本还没出这个平台」。代理照常走 https_proxy 环境变量。
             missing+=("$target")
             continue
         fi
@@ -60,7 +70,7 @@ fi
 
 mkdir -p "$(dirname "$out")"
 {
-    echo "# 由 scripts/formula.sh $ver 生成，别手改：sha256 来自已发布的 tarball。"
+    echo "# 由 scripts/formula.sh $ver 生成（发布后由 CI 的 tap job 跑），别手改：sha256 来自已发布的 tarball。"
     echo "class Mdview < Formula"
     echo '  desc "Terminal Markdown viewer: scroll, search, outline, mermaid diagrams, live reload"'
     echo "  homepage \"https://github.com/$repo\""

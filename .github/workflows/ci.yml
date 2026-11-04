@@ -83,6 +83,34 @@ jobs:
           files: artifacts/**/*.tar.gz
           generate_release_notes: true
 
+  # tarball 一落地就把它自己的 sha256 写回 Formula/mdview.rb。这一步以前得人在 tag 之后手动补，
+  # 忘一次 brew tap 就一直装旧版。提交基于 main （不是 tag 的 detached HEAD，那会把 main 往
+  # 后退）；推不上去就是有人在这几分钟里合了东西，红着报出来就好。
+  tap:
+    needs: release
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+      - run: MDVIEW_ARCHIVE_DIR=artifacts scripts/formula.sh "${GITHUB_REF_NAME#v}"
+      - name: Commit the formula
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/mdview.rb
+          if git diff --cached --quiet; then echo "Formula 没变化，跳过提交"; exit 0; fi
+          git commit -m "chore: Formula 同步 v${GITHUB_REF_NAME#v} 的 sha256 [skip ci]"
+          git push origin HEAD:main
+
   # tag 推上来就顺手发到 crates.io。token 存仓库 secret CARGO_REGISTRY_TOKEN
   # （crates.io -> Account Security -> API Access，建一个只对 mdview-rs 生效的 crate-scoped token）。
   # 现在触发条件只有 tag，这两个 if 看着多余；留着是最后一道闸：以后谁再
