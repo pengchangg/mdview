@@ -1,25 +1,25 @@
-# 由 scripts/formula.sh 0.4.1 生成（发布后由 CI 的 tap job 跑），别手改：sha256 来自已发布的 tarball。
+# 由 scripts/formula.sh 0.4.2 生成（发布后由 CI 的 tap job 跑），别手改：sha256 来自已发布的 tarball。
 class Mdview < Formula
   desc "Terminal Markdown viewer: scroll, search, outline, mermaid diagrams, live reload"
   homepage "https://github.com/pengchangg/mdview"
-  version "0.4.1"
+  version "0.4.2"
   license "MIT"
 
   on_linux do
     on_intel do
-      url "https://github.com/pengchangg/mdview/releases/download/v0.4.1/mdview-x86_64-unknown-linux-gnu.tar.gz"
-      sha256 "1c86b4010e99034a1e41d758fb6e75fb16c808d833c3d9f3026ac76425188383"
+      url "https://github.com/pengchangg/mdview/releases/download/v0.4.2/mdview-x86_64-unknown-linux-gnu.tar.gz"
+      sha256 "f044f1e754ec36e2731285b15e75430ec8ffd1e775ec1a24c8caa6c0ce1814b2"
     end
     on_arm do
-      url "https://github.com/pengchangg/mdview/releases/download/v0.4.1/mdview-aarch64-unknown-linux-gnu.tar.gz"
-      sha256 "5de23e34b9342f908443609fbf9555c00a4e8b72e87bfd9541cf1eeece646e4c"
+      url "https://github.com/pengchangg/mdview/releases/download/v0.4.2/mdview-aarch64-unknown-linux-gnu.tar.gz"
+      sha256 "748128515dbc2381cbfb046a7010a21040ae1ebcaa7a5ecfb2e6011dad87abef"
     end
   end
 
   on_macos do
     on_arm do
-      url "https://github.com/pengchangg/mdview/releases/download/v0.4.1/mdview-aarch64-apple-darwin.tar.gz"
-      sha256 "450535e196e11367e83b97856c6ba68055b3ce354d281848cab405cc68d2ef1f"
+      url "https://github.com/pengchangg/mdview/releases/download/v0.4.2/mdview-aarch64-apple-darwin.tar.gz"
+      sha256 "a41f56d0b839c4e21711b54e433cc833265d0b86c55d42b11568a67cda2b1214"
     end
   end
 
