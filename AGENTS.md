@@ -29,6 +29,10 @@ One hard rule: **pure logic stays separate from terminal IO.** That split is the
 - The outline maps rendered lines back to headings by comparing the line's style against `heading(level)` plus a text prefix (`is_heading_line` / `source_headings` in `render.rs`), which is why a `#` comment inside a code block never becomes a heading. Change a style and you must change this too.
 - Wrapping is by display width (`unicode-width` / `unicode-segmentation`) so CJK text cannot skew tables and code frames. That is why `wrap.rs` exists.
 - mermaid renders as box-drawing text, never as an image protocol; a diagram that fails to parse is pasted back as a code block with a status-bar warning instead of blanking the screen.
+- Search keeps two paths on purpose: `search::compile` returns `Pattern::Lit` unless the query
+  contains a regex metacharacter, so a plain query behaves and costs exactly what it did before
+  regex support. A trailing `\c` / `\C` is a vim-style case flag stripped there — if you touch that
+  code, keep the escape-parity check (`\\c` is a literal backslash + c, not a flag).
 - Known upstream warts in `mermaid-text` (waiting on upstream — do not patch around them locally): after a `gitGraph` merge the commit dot is off by one cell, and `«interface»` in `classDiagram` can overlap a border by one cell.
 
 ## Tests

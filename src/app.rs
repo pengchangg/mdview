@@ -30,6 +30,8 @@ pub struct App {
     pub editing: bool,
     pub matches: Vec<Match>,
     pub idx: usize,
+    /// 上一次编译搜索词的错误（一行文案），非空表示 `query` 不是合法正则。
+    pub search_err: Option<String>,
     pub outline_open: bool,
     pub sel: usize,
     pub help: bool,
@@ -61,6 +63,7 @@ impl App {
             editing: false,
             matches: Vec::new(),
             idx: 0,
+            search_err: None,
             outline_open: args.outline,
             sel: 0,
             help: false,
@@ -219,7 +222,18 @@ impl App {
     }
 
     fn apply_query(&mut self, typing: bool) {
-        self.matches = search::find(&self.doc.plain, &self.query);
+        let pat = match search::compile(&self.query) {
+            Ok(p) => p,
+            Err(e) => {
+                self.matches.clear();
+                self.idx = 0;
+                self.search_err = Some(e.clone());
+                self.status = format!("invalid pattern: {e}");
+                return;
+            }
+        };
+        self.search_err = None;
+        self.matches = search::find(&self.doc.plain, &pat);
         if self.matches.is_empty() {
             self.idx = 0;
             self.status = if self.query.is_empty() {
@@ -261,11 +275,16 @@ impl App {
         }
         self.query.clear();
         self.matches.clear();
+        self.search_err = None;
         self.scroll = self.pre_search_scroll.min(self.max_scroll());
     }
 
     /// 环绕跳到下一个（back=true 上一个）匹配。
     pub fn step_match(&mut self, back: bool) {
+        // 正则没编译对时 matches 必定为空，状态栏里已是编译错误，别覆成「没找到」。
+        if self.search_err.is_some() {
+            return;
+        }
         if self.matches.is_empty() {
             self.status = if self.query.is_empty() {
                 "no search query".into()

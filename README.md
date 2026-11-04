@@ -25,8 +25,8 @@ mdview README.md
   warning instead of taking the screen down.
 - **Live reload** — watches the containing directory (so editor rename-swap is caught too) and
   re-renders 250 ms after the last write.
-- **Search** — `/` highlights as you type, `n` / `N` cycle with wrap-around, the status bar shows
-  `3/17`.
+- **Search** — `/` takes a regex (or plain text), highlights as you type, `n` / `N` cycle with
+  wrap-around, the status bar shows `3/17`.
 - **Outline sidebar** — `o` toggles it, the selection tracks where you are reading, `Enter` jumps.
 - **Readable measure** — `--max-width 90` caps the body width; the rest becomes margin.
 - **Themes** — dark and light palettes; `NO_COLOR` and `TERM=dumb` degrade to colourless / ASCII.
@@ -66,7 +66,7 @@ mdview x.md --no-mouse           # start without mouse capture
 | `d` `u` | half page |
 | `f` `b` `PgDn` `PgUp` | full page |
 | `g` `G` `Home` `End` | top / bottom |
-| `/` | search (case-insensitive substring); `Enter` keep, `Backspace` delete, `Ctrl-U` clear, `Esc` cancel |
+| `/` | regex search — case-insensitive unless the pattern ends with `\C` (`\c` forces it back on); `Enter` keep, `Backspace` delete, `Ctrl-U` clear, `Esc` cancel |
 | `n` `N` | next / previous match, wraps |
 | `o` | toggle the outline (focus moves into it when opened) |
 | `Tab` | move focus between body and outline |
@@ -90,8 +90,15 @@ mdview x.md --no-mouse           # start without mouse capture
 
 - Links aren't followed (they carry OSC 8, so `Ctrl+click` works in terminals that support it); no
   file tree, no tabs.
-- Search is substring only — no regex, no fuzzy — and the search box has `Backspace` and `Ctrl-U`
-  but no cursor keys.
+- Search syntax is the [`regex`](https://docs.rs/regex) crate's — `a|b`, `(ab)+`, `\b`, `(?i)` —
+  not vim's: metacharacters are written bare and `\v`/`\V` mean nothing here — to find a literal
+  `$` search `\$`. It compiles to a
+  linear-time automaton, so no catastrophic backtracking, but backreferences and lookahead
+  (`\1`, `(?=…)`) are not supported.
+- Matches are per rendered line, so a pattern can't span a soft-wrapped line; zero-width matches
+  (`a*`) are skipped since there is nothing to highlight. An unfinished pattern (an unclosed `(`)
+  shows the reason in the status bar instead of an error dialog.
+- Fuzzy matching: no. The search box has `Backspace` and `Ctrl-U` but no cursor keys.
 - mermaid renders as text, never as an image: no `mmdc`, Node or Chromium, and no image protocol
   (Alacritty and Windows Terminal support neither Kitty nor ichthys).
 - File-level watching only, and no config file yet — command-line flags are all there is.
@@ -115,7 +122,8 @@ line of terminal IO, which is why they are all testable), and only `view` / `ter
 a width change re-renders, a height change only clamps the scroll offset.
 
 Measured (release build, 1 MB of mixed CJK/Latin with plenty of code blocks): 369 ms to render the
-whole document into 56,609 lines at 100 columns; a full search rescan costs 6.8 ms per keystroke.
+whole document into 56,609 lines at 100 columns; a full search rescan costs 6.8 ms per keystroke
+(a regex query compiles once per keystroke and rescans in the same order: 1.4 ms on 0.5 MB).
 
 ## License
 

@@ -200,10 +200,14 @@ fn draw_status(f: &mut Frame, app: &App, area: Rect) {
             format!("/{}▏", app.query),
             th.search_current(),
         ));
-        spans.push(Span::styled(
-            format!(" {} hits ", app.matches.len()),
-            th.dim(),
-        ));
+        // 边打字边编译，写了一半的正则（`(`、`[`）很常见，把错因直接显示在搜索框后面。
+        match &app.search_err {
+            Some(e) => spans.push(Span::styled(format!(" {e} "), th.warning())),
+            None => spans.push(Span::styled(
+                format!(" {} hits ", app.matches.len()),
+                th.dim(),
+            )),
+        }
     } else if !app.query.is_empty() {
         let hit = if app.matches.is_empty() {
             0
@@ -272,6 +276,7 @@ fn draw_help(f: &mut Frame, app: &App, area: Rect) {
 
 const HELP: &str = "j k ↑↓ scroll       d/u half page    f/b page
 g/G top / bottom    o outline        m mouse
-/ search            n/N next/prev    Enter keep
+/ regex search      n/N next/prev    Enter keep
+  a|b  (ab)+  \\b   \\c \\C case off/on
 Tab focus outline   Enter jump       ? close
 q / Esc / Ctrl-C quit";

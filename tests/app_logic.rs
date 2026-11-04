@@ -151,6 +151,43 @@ fn search_without_match_reports_and_does_not_move() {
 }
 
 #[test]
+fn regex_query_matches_alternation_and_class() {
+    let mut a = app(&long_doc(), (100, 20));
+    a.set_query("第二节");
+    let lit = a.matches.len();
+    assert!(lit >= 3);
+    a.set_query("第[一二三]节");
+    assert!(
+        a.matches.len() > lit,
+        "字符类该比字面量多命中: {} vs {}",
+        a.matches.len(),
+        lit
+    );
+    assert_eq!(a.search_err, None);
+}
+
+#[test]
+fn half_written_regex_reports_and_recovers() {
+    let mut a = app(&long_doc(), (100, 20));
+    a.begin_search();
+    for c in "(第".chars() {
+        a.push_query(c);
+    }
+    assert!(a.matches.is_empty());
+    assert!(a.search_err.is_some(), "没闭合的括号要报错");
+    assert!(a.status.contains("invalid pattern"), "状态栏: {}", a.status);
+    let status = a.status.clone();
+    a.on_key(key(KeyCode::Char('n')));
+    assert_eq!(a.status, status, "n 不该把错误提示成没找到");
+
+    for c in "|正)".chars() {
+        a.push_query(c);
+    }
+    assert_eq!(a.search_err, None, "补上 |正) 就是合法正则");
+    assert!(!a.matches.is_empty());
+}
+
+#[test]
 fn esc_clears_search_then_quits() {
     let mut a = app(&long_doc(), (100, 20));
     a.set_query("正文");

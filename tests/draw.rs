@@ -109,3 +109,18 @@ fn tiny_terminal_shows_a_hint_instead_of_crashing() {
     let screen = draw(&mut app, 10, 3);
     assert!(screen[0].contains("Terminal"), "{screen:?}");
 }
+
+#[test]
+fn status_bar_shows_the_regex_error_while_typing() {
+    let mut app = app_for("# 标题\n\n正文 here\n");
+    app.begin_search();
+    app.push_query('(');
+    let bar = draw(&mut app, 80, 20).pop().unwrap();
+    assert!(bar.contains("unclosed"), "写了一半的正则要说错因: {bar:?}");
+
+    for c in "h)".chars() {
+        app.push_query(c);
+    }
+    let bar = draw(&mut app, 80, 20).pop().unwrap();
+    assert!(bar.contains("hits"), "补成 `(h)` 就该换回命中数: {bar:?}");
+}
