@@ -9,30 +9,43 @@ use clap::{Parser, ValueEnum};
     about = "Terminal Markdown viewer: scroll, search, outline, mermaid diagrams, live reload"
 )]
 pub struct Args {
-    /// Markdown file to preview
-    pub file: PathBuf,
+    /// Markdown file or directory to preview (default: the current directory)
+    pub file: Option<PathBuf>,
 
     /// Disable file watching (on by default: re-render when the file is saved)
-    #[arg(long)]
-    pub no_watch: bool,
+    /// `Option<bool>` 不是 bool：没给 = None，才能让配置文件填；给了 = Some(true)。
+    #[arg(long, num_args = 0, default_missing_value = "true")]
+    pub no_watch: Option<bool>,
 
     /// Disable mouse capture (so the terminal can still select and copy text)
-    #[arg(long)]
-    pub no_mouse: bool,
+    #[arg(long, num_args = 0, default_missing_value = "true")]
+    pub no_mouse: Option<bool>,
 
     /// Start with the outline sidebar open
-    #[arg(long)]
-    pub outline: bool,
+    #[arg(long, num_args = 0, default_missing_value = "true")]
+    pub outline: Option<bool>,
 
     /// Maximum body width in columns; extra terminal width becomes margin
     #[arg(long)]
     pub max_width: Option<u16>,
 
-    #[arg(long, value_enum, default_value_t = MermaidMode::Auto)]
-    pub mermaid: MermaidMode,
+    // 默认值不在这里填：config::merge 统一按 CLI > 配置文件 > 内置默认 三路定下来。
+    #[arg(long, value_enum)]
+    pub mermaid: Option<MermaidMode>,
 
-    #[arg(long, value_enum, default_value_t = ThemeMode::Auto)]
-    pub theme: ThemeMode,
+    #[arg(long, value_enum)]
+    pub theme: Option<ThemeMode>,
+
+    /// Print a shell completion script to stdout and exit (works without a terminal)
+    #[arg(long, value_enum)]
+    pub print_completion: Option<Completion>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
+pub enum Completion {
+    Bash,
+    Zsh,
+    Fish,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]

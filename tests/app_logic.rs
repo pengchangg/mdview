@@ -51,8 +51,13 @@ fn scroll_keys_move_one_line_and_page() {
     assert!(bottom > 0);
     a.on_key(key(KeyCode::Char('G')));
     assert_eq!(a.scroll, bottom, "到底了再按 G 不动");
+    // g 在 vim 里是前缀键：单按不动，gg 才跳顶（gx 就挂在这个前缀上）。
+    a.on_key(key(KeyCode::Char('g')));
+    assert_eq!(a.scroll, bottom, "单按 g 不该动");
+    assert!(a.pending_g);
     a.on_key(key(KeyCode::Char('g')));
     assert_eq!(a.scroll, 0);
+    assert!(!a.pending_g, "gg 之后不该留着前缀");
 }
 
 #[test]

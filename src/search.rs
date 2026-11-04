@@ -7,10 +7,21 @@ use ratatui::style::Style;
 use ratatui::text::{Line, Span};
 use regex::RegexBuilder;
 
+use crate::render::Logical;
+
+/// 一次命中在某条显示行上要亮的区间。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RowHit {
+    pub row: usize,
+    pub ranges: Vec<(usize, usize)>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Match {
+    /// 命中所在的第一条显示行（N/n、滚动、大纲都按它）。
     pub line: usize,
-    pub ranges: Vec<(usize, usize)>,
+    /// 命中摊到显示行上的片段，按行序。段落被软换行切开时会有好几条。
+    pub rows: Vec<RowHit>,
 }
 
 /// 编译好的搜索词。不含元字符就走原来的字面量扫描：省掉每按一键编译一次正则，
@@ -64,7 +75,8 @@ fn strip_case_flag(q: &str) -> (&str, bool) {
 }
 
 /// 全量重扫：实测 1 MB 文档每按一个键 6.8 ms，不需要增量索引。
-pub fn find(plain: &[String], pat: &Pattern) -> Vec<Match> {
+/// 输入是逻辑行（未折行），所以一段被软换行切开的话照样连得起来；命中再摊回显示行。
+pub fn find(doc: &[Logical], pat: &Pattern) -> Vec<Match> {
     // 字面量先拆成 char，整篇扫描就不用每行重建一次了。
     let lit: Vec<char> = match pat {
         Pattern::Lit(nl) => nl.chars().collect(),
@@ -73,23 +85,46 @@ pub fn find(plain: &[String], pat: &Pattern) -> Vec<Match> {
     if matches!(pat, Pattern::Lit(nl) if nl.is_empty()) {
         return Vec::new();
     }
-    plain
-        .iter()
-        .enumerate()
-        .filter_map(|(i, line)| {
+    doc.iter()
+        .filter_map(|l| {
             let ranges = match pat {
-                Pattern::Lit(_) => find_line(line, &lit),
+                Pattern::Lit(_) => find_line(&l.text, &lit),
                 // shortcut: 零宽命中（`a*` 匹配空串那种）丢掉，它画不出高亮；
                 // 真要跟随空匹配得让 Match 支持空区间 + view 画光标。
                 Pattern::Re(re) => re
-                    .find_iter(line)
+                    .find_iter(&l.text)
                     .filter(|m| !m.as_str().is_empty())
                     .map(|m| (m.start(), m.end()))
                     .collect(),
             };
-            (!ranges.is_empty()).then_some(Match { line: i, ranges })
+            (!ranges.is_empty()).then(|| spread(l, &ranges))
         })
         .collect()
+}
+
+/// 逻辑行上的字节区间摊到各显示行：跨过断点的命中会被切成几段，各落自己那行。
+fn spread(l: &Logical, ranges: &[(usize, usize)]) -> Match {
+    let mut rows: Vec<RowHit> = Vec::new();
+    for &(a, b) in ranges {
+        for (k, &(s, e)) in l.spans.iter().enumerate() {
+            let (x, y) = (a.max(s), b.min(e));
+            if x >= y {
+                continue;
+            }
+            let row = l.first_row + k;
+            match rows.last_mut() {
+                Some(rh) if rh.row == row => rh.ranges.push((x - s, y - s)),
+                _ => rows.push(RowHit {
+                    row,
+                    ranges: vec![(x - s, y - s)],
+                }),
+            }
+        }
+    }
+    Match {
+        line: rows.first().map_or(l.first_row, |r| r.row),
+        rows,
+    }
 }
 
 fn find_line(hay: &str, nl: &[char]) -> Vec<(usize, usize)> {

@@ -12,7 +12,7 @@ use ratatui::{
 };
 
 use crate::app::{App, Focus};
-use crate::search::{self, Match};
+use crate::search;
 use crate::theme::Theme;
 
 pub fn draw(f: &mut Frame, app: &mut App) {
@@ -67,12 +67,13 @@ fn draw_body(f: &mut Frame, app: &App, body: Rect) {
     let start = app.scroll;
     let end = start + h;
 
-    let hits: Vec<(&Match, bool)> = app
+    // 一条命中可能跨几行：先摊成 (显示行, 命中下标)，同一行可能挂着好几条。
+    let hits: Vec<(usize, usize)> = app
         .matches
         .iter()
         .enumerate()
-        .filter(|(_, m)| m.line >= start && m.line < end)
-        .map(|(i, m)| (m, i == app.idx))
+        .flat_map(|(i, m)| m.rows.iter().map(move |rh| (rh.row, i)))
+        .filter(|(row, _)| *row >= start && *row < end)
         .collect();
     let mut hit_idx = 0;
 
@@ -81,18 +82,26 @@ fn draw_body(f: &mut Frame, app: &App, body: Rect) {
         let row = start + r;
         match app.doc.lines.get(row) {
             Some(line) => {
-                let hit = hits.get(hit_idx).filter(|(m, _)| m.line == row);
-                if hit.is_some() {
+                let mut ranges: Vec<(usize, usize)> = Vec::new();
+                let mut cur = None;
+                while hits.get(hit_idx).is_some_and(|(r, _)| *r == row) {
+                    let i = hits[hit_idx].1;
                     hit_idx += 1;
+                    let Some(rh) = app.matches[i].rows.iter().find(|rh| rh.row == row) else {
+                        continue;
+                    };
+                    cur = cur.or((i == app.idx).then_some(ranges.len()));
+                    ranges.extend_from_slice(&rh.ranges);
                 }
-                rows.push(match hit {
-                    Some((m, cur)) => search::highlight(
+                rows.push(if ranges.is_empty() {
+                    clone_line(line)
+                } else {
+                    search::highlight(
                         line,
-                        &m.ranges,
+                        &ranges,
                         th.search_hit(),
-                        cur.then_some((0, th.search_current())),
-                    ),
-                    None => clone_line(line),
+                        cur.map(|i| (i, th.search_current())),
+                    )
                 });
             }
             None => rows.push(Line::default()),
@@ -184,7 +193,17 @@ fn draw_status(f: &mut Frame, app: &App, area: Rect) {
             th.outline_current(),
         ),
         Span::styled(
-            format!(" {} ", app.file_name()),
+            // 多文件时多一个序号：一眼知道在同目录第几个，] [ 能切。
+            if app.files.len() > 1 {
+                format!(
+                    " {} · {}/{} ",
+                    app.file_name(),
+                    app.file_idx + 1,
+                    app.files.len()
+                )
+            } else {
+                format!(" {} ", app.file_name())
+            },
             Style::default().add_modifier(Modifier::BOLD),
         ),
         Span::styled(format!(" line {cur}/{total} ({pct}%) "), th.dim()),
@@ -276,6 +295,7 @@ fn draw_help(f: &mut Frame, app: &App, area: Rect) {
 
 const HELP: &str = "j k ↑↓ scroll       d/u half page    f/b page
 g/G top / bottom    o outline        m mouse
+] [ prev/next file  gx follow link
 / regex search      n/N next/prev    Enter keep
   a|b  (ab)+  \\b   \\c \\C case off/on
 Tab focus outline   Enter jump       ? close

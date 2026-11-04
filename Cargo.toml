@@ -9,6 +9,8 @@ repository = "https://github.com/pengchangg/mdview"
 homepage = "https://github.com/pengchangg/mdview"
 keywords = ["markdown", "tui", "viewer", "mermaid", "terminal"]
 categories = ["command-line-utilities", "text-processing"]
+# 仓库跟包一起放着但不该进 crates.io tarball 的东西（补全脚本、tap、CI）。
+exclude = ["install.sh", "Formula", "scripts", ".github", "examples"]
 
 # 包名带 -rs 只是为了在 crates.io 上避名，库和命令还是 mdview。
 [lib]
@@ -21,6 +23,7 @@ path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4.6.7", features = ["derive"] }
+clap_complete = "4"
 color-eyre = "0.6.5"
 crossterm = "0.29.0"
 mermaid-text = "0.57.0"
@@ -28,6 +31,7 @@ notify = "8.2.1"
 pulldown-cmark = "0.13.6"
 ratatui = "0.30.2"
 regex = "1.13.1"
+toml_edit = { version = "0.23", default-features = false, features = ["parse"] }
 tui-markdown = "0.3.13"
 unicode-segmentation = "1.13.3"
 unicode-width = "0.2.3"
@@ -39,12 +43,3 @@ insta = "1.49.0"
 lto = "thin"
 codegen-units = 1
 strip = true
-
-# cargo-dist 用；跑 `cargo dist init` 之前先留着，构建配置就这一处。
-[profile.dist]
-inherits = "release"
-
-[package.metadata.dist]
-dist = true
-installers = ["shell", "powershell"]
-targets = ["x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "x86_64-pc-windows-msvc"]

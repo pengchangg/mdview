@@ -124,3 +124,47 @@ fn status_bar_shows_the_regex_error_while_typing() {
     let bar = draw(&mut app, 80, 20).pop().unwrap();
     assert!(bar.contains("hits"), "补成 `(h)` 就该换回命中数: {bar:?}");
 }
+
+/// 跨折行的命中：只亮它压到的那两条显示行，其余行干净。
+#[test]
+fn a_wrapped_hit_lights_only_the_rows_it_touches() {
+    let mut app = app_for("The quick brown fox jumps over\nthe lazy dog\n");
+    app.set_size(30, 12);
+    assert!(app.doc.plain.len() >= 2, "段落得被折开才能测");
+    // 查询就取断点两侧的词，保证命中跨过折行处。
+    let tail = app.doc.plain[0].split(' ').next_back().unwrap();
+    let head = app.doc.plain[1].split(' ').next().unwrap();
+    app.set_query(&format!("{tail} {head}"));
+    assert_eq!(app.matches.len(), 1);
+    assert_eq!(
+        app.matches[0].rows.len(),
+        2,
+        "命中该跨折行处: {:?}",
+        app.matches[0]
+    );
+
+    let mut term = Terminal::with_options(
+        TestBackend::new(30, 12),
+        TerminalOptions {
+            viewport: Viewport::Fullscreen,
+        },
+    )
+    .unwrap();
+    app.set_size(30, 12);
+    term.draw(|f| view::draw(f, &mut app)).unwrap();
+    let buf = term.backend().buffer();
+    let lit: Vec<usize> = (0..buf.area().height as usize)
+        .filter(|y| {
+            (0..buf.area().width).any(|x| {
+                buf.cell((x, *y as u16))
+                    .and_then(|c| c.style().bg)
+                    .is_some_and(|bg| {
+                        bg == ratatui::style::Color::Rgb(240, 210, 90)
+                            || bg == ratatui::style::Color::Rgb(255, 140, 60)
+                    })
+            })
+        })
+        .collect();
+    let want: Vec<usize> = app.matches[0].rows.iter().map(|rh| rh.row).collect();
+    assert_eq!(lit, want, "只亮命中那几行: {lit:?} vs {want:?}");
+}
