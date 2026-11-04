@@ -60,6 +60,25 @@ jobs:
           mkdir -p dist
           cp "target/${{ matrix.target }}/release/mdview${ext}" dist/
           tar -C dist -czf "${{ matrix.artifact }}.tar.gz" "mdview${ext}"
+      # 冒烟：产物要真能跑起来。v0.3.0 那次 tag 打在 Cargo.toml=0.2.0 上，发出去的包
+      # 全打印 0.2.0，而 publish 只校验不修复 —— tag 构建就顺手跟 tag 比一下版本。
+      - name: Smoke the binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          bin=./dist/mdview
+          [ -f "$bin" ] || bin=./dist/mdview.exe
+          out="$("$bin" --version)"
+          echo "$out"
+          case "${GITHUB_REF:-}" in
+            refs/tags/v*)
+              v="${GITHUB_REF_NAME#v}"
+              case "$out" in
+                *"$v"*) ;;
+                *) echo "::error::version mismatch: binary says $out, tag is $GITHUB_REF_NAME"; exit 1 ;;
+              esac
+              ;;
+          esac
       # v7 upload + v8 download 是一对（v8 的 direct-download 就是为 v7 的 direct-upload 加的），
       # 一起升；v8 还把摘要不一致从警告改成了报错。都跑在 Node 24 上，官方 runner 会自动满
       # 要求（>=2.327.1），不再报 Node 20 deprecated。

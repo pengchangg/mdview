@@ -15,6 +15,26 @@ fn write_config(text: &str) -> PathBuf {
     path
 }
 
+/// 配置文件写错要说人话：一行 `mdview: ...` + 非零退出，别把 color-eyre 的回溯吐出来。
+#[test]
+fn a_bad_config_exits_with_one_clean_line() {
+    let dir = temp_dir();
+    let bad = dir.join("bad.toml");
+    std::fs::write(&bad, "max_widthd = 40\n").unwrap();
+    let out = std::process::Command::new(env!("CARGO_BIN_EXE_mdview"))
+        .arg(dir.join("t.md"))
+        .env("MDVIEW_CONFIG", &bad)
+        .output()
+        .unwrap();
+    assert!(!out.status.success(), "配置错了就不该继续跑");
+    let err = String::from_utf8_lossy(&out.stderr);
+    assert!(err.contains("unknown key"), "要说清哪个键: {err}");
+    assert!(
+        err.contains(&bad.display().to_string()),
+        "要说清哪个文件: {err}"
+    );
+    assert!(!err.contains("Location:"), "别吐回溯: {err}");
+}
 /// `args()` 把 theme/mermaid 钉成 Dark/Off（快照要稳），测配置文件就得先把它们放开。
 fn bare(path: &Path) -> mdview::cli::Args {
     let mut a = args(path);

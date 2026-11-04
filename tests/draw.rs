@@ -122,7 +122,11 @@ fn status_bar_shows_the_regex_error_while_typing() {
         app.push_query(c);
     }
     let bar = draw(&mut app, 80, 20).pop().unwrap();
-    assert!(bar.contains("hits"), "补成 `(h)` 就该换回命中数: {bar:?}");
+    assert!(
+        // draw() 把空白剔了再比，所以按去掉空格后的形状断言。
+        bar.contains("1hit") && !bar.contains("hits"),
+        "补成 `(h)` 就该换回命中数，一条不写 hits: {bar:?}"
+    );
 }
 
 /// 跨折行的命中：只亮它压到的那两条显示行，其余行干净。

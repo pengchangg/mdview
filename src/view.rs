@@ -223,7 +223,11 @@ fn draw_status(f: &mut Frame, app: &App, area: Rect) {
         match &app.search_err {
             Some(e) => spans.push(Span::styled(format!(" {e} "), th.warning())),
             None => spans.push(Span::styled(
-                format!(" {} hits ", app.matches.len()),
+                format!(
+                    " {} hit{} ",
+                    app.matches.len(),
+                    if app.matches.len() == 1 { "" } else { "s" }
+                ),
                 th.dim(),
             )),
         }

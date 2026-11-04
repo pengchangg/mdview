@@ -4,7 +4,7 @@ use std::sync::mpsc::Receiver;
 use std::time::Duration;
 
 use clap::{CommandFactory, Parser};
-use color_eyre::eyre::{bail, eyre};
+use color_eyre::eyre::bail;
 use crossterm::terminal;
 use mdview::{
     app::App,
@@ -32,9 +32,12 @@ fn main() -> color_eyre::Result<()> {
     }
 
     // 配置文件：MDVIEW_CONFIG → $XDG_CONFIG_HOME → ~/.config；只填命令行没给的键。
-    let mut notes = match config::locate(|k| std::env::var(k).ok()).map_err(|e| eyre!("{e}"))? {
-        Some(path) => config::merge(&mut args, &config::read(&path).map_err(|e| eyre!("{e}"))?),
-        None => config::merge(&mut args, &config::Config::default()),
+    let mut notes = match load_config(&mut args) {
+        Ok(notes) => notes,
+        Err(msg) => {
+            eprintln!("mdview: {msg}");
+            std::process::exit(1);
+        }
     };
 
     // 重定向到文件时没有终端可画，报一句话比吐一片转义码有用。
@@ -95,6 +98,16 @@ fn run(
         }
     }
     Ok(())
+}
+
+/// 配置文件的错是用户自己写的 TOML 错了，不是我们的 bug：非零退出 + 一句话就够。
+/// color-eyre 那套 Location / 回溯会把 `unknown key `max_widthd` in ...` 淹掉。
+fn load_config(args: &mut Args) -> Result<Vec<String>, String> {
+    let cfg = match config::locate(|k| std::env::var(k).ok())? {
+        Some(path) => config::read(&path)?,
+        None => config::Config::default(),
+    };
+    Ok(config::merge(args, &cfg))
 }
 
 fn spawn_watcher(app: &App, args: &Args, notes: &mut Vec<String>) -> Receiver<()> {
