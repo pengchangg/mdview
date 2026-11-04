@@ -44,7 +44,9 @@ cargo build --release         # binary at target/release/mdview
 The crate is published as **`mdview-rs`** only because the name `mdview` was taken on crates.io
 back in 2020; the library and the command are both still called `mdview`.
 
-Tagging a release publishes three-platform archives (Linux / macOS / Windows) from GitHub Actions.
+Tag a release with `scripts/tag.sh 0.3.1`: it syncs the version into `Cargo.toml` and `Cargo.lock`,
+commits, pushes, then tags. GitHub Actions publishes three-platform archives
+(Linux / macOS / Windows) plus the crates.io release from that tag.
 
 ## Usage
 

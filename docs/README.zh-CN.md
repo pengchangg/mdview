@@ -32,8 +32,13 @@ cargo build --release         # 二进制在 target/release/mdview
 
 crates.io 上的包名带 `-rs` 只是因为 `mdview` 这个名字 2020 年就被别人占用了；库名和命令都还是 `mdview`。
 
-打了 tag 之后，GitHub Actions 会发出 Linux / macOS / Windows 三个平台的压缩包，解压后把单个
-`mdview` 放进 `PATH` 即可。
+发版只用一条命令：`scripts/tag.sh 0.3.1`。它会把版本号同步进 `Cargo.toml` 和 `Cargo.lock`，提交、
+推分支，再打 tag 推上去；随后 GitHub Actions 从那个 tag 发出 Linux / macOS / Windows 三个平台的
+压缩包，并发到 crates.io。解压后把单个 `mdview` 放进 `PATH` 即可。
+
+版本号必须在 tag 里面就是对的：CI 的二进制是从 tag 那份代码构建的，而 publish 前的检查只会比对
+tag 和 `Cargo.toml`，不会（也没法）事后改 tag。v0.3.0 就是打在 `Cargo.toml` 还是 0.2.0 的提交上，
+结果那个 release 里的二进制 `--version` 报 0.2.0，crates.io 也没收到东西。
 
 ## 用法
 
