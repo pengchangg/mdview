@@ -1,9 +1,12 @@
 name: CI
 
 on:
-  # 只在打 tag 时跑：push 分支和 PR 都不触发。发版流水线就是 CI 的全部内容。
   push:
     tags: ["v*"]
+  # PR 和手动 run 跑 check + build，不发版：release / publish 都锁在 tag 上（见各自 if），
+  # 所以这类 run 再也不会碰 crates.io。注意 push 分支本身不触发 —— 想验 main 就 dispatch。
+  pull_request:
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
