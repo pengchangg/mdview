@@ -47,4 +47,4 @@ fi
 git push origin "$branch" || { echo "$branch 没推上去，tag 就不打了（版本号提交还在本地）" >&2; exit 1; }
 git tag "$tag"
 git push origin "$tag" || { echo "tag 没推上去；重试前先 git tag -d $tag" >&2; exit 1; }
-echo "已推 $branch + $tag，CI 会跑 check → build ×3 → release → publish"
+echo "已推 $branch + $tag，CI 会跑 check → build ×4 → release → publish；tarball 出来后再跑 scripts/formula.sh $ver"
