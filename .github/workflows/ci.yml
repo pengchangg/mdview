@@ -30,6 +30,11 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             artifact: mdview-x86_64-unknown-linux-gnu
+          # 官方 ubuntu-latest 是 x86_64：要出 ARM 包只能靠 QEMU 模拟，慢且在链接器上容易翻车；
+          # ARM runner 是原生 codegen。（ARM runner 按分钟加权计费，一年一次发版忽略不计。）
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            artifact: mdview-aarch64-unknown-linux-gnu
           - os: macos-latest
             target: aarch64-apple-darwin
             artifact: mdview-aarch64-apple-darwin
