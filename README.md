@@ -6,6 +6,8 @@ A Markdown viewer for the terminal. Point it at a `.md` file and you get scrolli
 outline sidebar and mermaid diagrams — and **the screen follows your editor's saves**.
 Cross-platform (Linux / macOS / Windows), pure Rust: no Node, no browser, no server.
 
+![mdview scrolling, searching and outlining a Markdown file in a terminal](examples/demo.gif)
+
 ```
 mdview README.md
 ```
@@ -158,7 +160,7 @@ cargo test                                              # unit + snapshot + logi
 INSTA_UPDATE=always cargo test --test render_snapshot   # refresh snapshots after a render change
 cargo run -- examples/demo.md
 cargo clippy --all-targets -- -D warnings
-vhs examples/demo.tape                                  # record the demo gif (needs vhs)
+vhs examples/demo.tape                                  # record the demo gif (vhs + ttyd/tmux/ffmpeg + a CJK font)
 ```
 
 The code is split in two: `render` / `wrap` / `search` / `mermaid` / `app` are pure logic (not one

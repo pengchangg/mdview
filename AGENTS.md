@@ -45,6 +45,7 @@ One hard rule: **pure logic stays separate from terminal IO.** That split is the
 - Shared constructors live in `tests/support/mod.rs`: `render` / `render_no_mermaid` / `plain` / `theme` / `opts` / `args`. The theme is hard-coded dark with mermaid off so snapshots do not drift with CI's `TERM` / `NO_COLOR` — new tests go through these helpers, never `Theme::detect`.
 - `temp_md()` gives each test case its own temp directory: parallel cases must not share one `t.md` (it exists so the live-reload tests can write files).
 - Snapshots are in `tests/snapshots/` (insta). When render behaviour changes, re-run with `INSTA_UPDATE=always` and review the diff — do not blind-refresh snapshots to make a test pass.
+- `examples/demo.gif` (the README's first image) comes from `vhs examples/demo.tape`. vhs 0.12 spells the frame rate `Set Framerate` (there is no `Set FPS`), and the machine needs a CJK font or demo.md renders as tofu boxes. `n` / `N` only step matches after `Enter` — while the query is still being typed they are literal characters, so the tape must `Enter` before `nn`.
 
 ## Language
 

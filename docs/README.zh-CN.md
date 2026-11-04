@@ -5,6 +5,8 @@
 终端里的 Markdown 预览器。打开一个 `.md`，就能滚动、搜索、看大纲、看 mermaid 图，
 **编辑器保存后画面立刻跟着变**。跨平台（Linux / macOS / Windows），纯 Rust，不需要 Node、浏览器或任何外部服务。
 
+![mdview 在终端里滚动、搜索、开大纲](../examples/demo.gif)
+
 ```
 mdview README.md
 ```
@@ -130,7 +132,7 @@ cargo test                                              # 单元测试 + 快照 
 INSTA_UPDATE=always cargo test --test render_snapshot   # 改了渲染后更新快照
 cargo run -- examples/demo.md
 cargo clippy --all-targets -- -D warnings
-vhs examples/demo.tape                                  # 录演示 gif（需要 vhs）
+vhs examples/demo.tape                                  # 录演示 gif（要 vhs + ttyd/tmux/ffmpeg + 一个中日韩字体）
 ```
 
 代码分成两半：`render`/`wrap`/`search`/`mermaid`/`files`/`config`/`app` 是纯逻辑（终端 IO 一行都没有，所以全部可以单测），
