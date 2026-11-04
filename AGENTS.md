@@ -19,7 +19,7 @@ cargo build --release                            # binary at target/release/mdvi
 
 One hard rule: **pure logic stays separate from terminal IO.** That split is the reason everything is testable — put new code where this rule says, not where it is convenient.
 
-- Pure logic (zero terminal IO, unit-testable directly): `src/render.rs`, `src/wrap.rs`, `src/search.rs`, `src/mermaid.rs`, `src/app.rs` (state machine + `handle(events)`: keys in, state out)
+- Pure logic (zero terminal IO, unit-testable directly): `src/render.rs`, `src/wrap.rs`, `src/search.rs`, `src/mermaid.rs`, `src/files.rs` (directory listing + natural order), `src/config.rs` (the six TOML keys + the CLI > file > builtin merge), `src/app.rs` (state machine + `handle(events)`: keys in, state out)
 - Touches the screen / keyboard: `src/view.rs` (single draw entry point `draw(f, app)`), `src/term.rs` (`TermGuard` for raw mode / alternate screen / mouse, plus the panic hook), `src/event.rs` (`collect` aggregates events, `TICK = 250ms`), `src/main.rs` (the loop)
 - Rendering has exactly one entry point: `mdview::to_doc(src, width, opts)` (`preview` in `lib.rs` is only an alias). A width change re-renders; a height change only clamps the scroll offset. Do not add a second render path.
 
@@ -33,6 +33,11 @@ One hard rule: **pure logic stays separate from terminal IO.** That split is the
   contains a regex metacharacter, so a plain query behaves and costs exactly what it did before
   regex support. A trailing `\c` / `\C` is a vim-style case flag stripped there — if you touch that
   code, keep the escape-parity check (`\\c` is a literal backslash + c, not a flag).
+- Search indexes `RenderedDoc.logical` (one entry per *unwrapped* rendered line), not `plain`.
+  tui-markdown already joins soft-wrapped paragraphs into one line and `wrap_line` hard-wraps it
+  afterwards, so that list is what makes a query match across a wrap; `Logical.spans` maps its
+  byte offsets back onto the display rows so only the touched rows light up. A hit reports
+  `line` = its first row, so `n`/`N` scrolling and the outline keep their old meaning.
 - Known upstream warts in `mermaid-text` (waiting on upstream — do not patch around them locally): after a `gitGraph` merge the commit dot is off by one cell, and `«interface»` in `classDiagram` can overlap a border by one cell.
 
 ## Tests
@@ -48,7 +53,12 @@ One hard rule: **pure logic stays separate from terminal IO.** That split is the
 
 ## Releasing
 
-One command: `scripts/tag.sh 0.3.1`. It writes the version into `Cargo.toml` (the `[package]` one — deps use the same key, the script only replaces the first `version = ` line), syncs the root package's version line in `Cargo.lock`, commits, pushes the branch, then tags `v<version>` and pushes the tag. The tag triggers CI: `check` (fmt/clippy/test) → `build` (3 platforms) → `release` (GitHub Release with the tarballs) → `publish` (crates.io, using the repo secret `CARGO_REGISTRY_TOKEN`).
+One command: `scripts/tag.sh 0.3.1`. It writes the version into `Cargo.toml` (the `[package]` one — deps use the same key, the script only replaces the first `version = ` line), syncs the root package's version line in `Cargo.lock`, commits, pushes the branch, then tags `v<version>` and pushes the tag. The tag triggers CI: `check` (fmt/clippy/test) → `build` (4 platforms: linux x86_64 + aarch64, macOS arm64, Windows x86_64) → `release` (GitHub Release with the tarballs) → `publish` (crates.io, using the repo secret `CARGO_REGISTRY_TOKEN`).
+
+Once the tarballs exist, run `scripts/formula.sh <version>` and commit `Formula/mdview.rb` on its
+own. It downloads the four archives from the release and writes their sha256 into the tap formula,
+so it can only run *after* the tag shipped — `tag.sh` must stay untouched by it, and an Intel
+macOS bottle never exists (that install path is `cargo install`, which the formula does not offer).
 
 Don't release by hand (bump → commit → tag). The version has to be right *inside* the tag, because CI builds the tarballs from the tag ref and the publish job only *checks* `tag == Cargo.toml` — it cannot repair a tag afterwards. v0.3.0 was tagged over `Cargo.toml = 0.2.0`, so those release tarballs print `mdview 0.2.0` and crates.io got nothing. Two rules the script encodes: refresh the lock with `cargo metadata`, never `cargo generate-lockfile` (that re-resolves and smuggles unrelated dep bumps — it moved `pest_stack_guard` 1.0.0 → 1.0.1 — into the release commit), and push the branch before the tag (one push with two refspecs can land a tag whose commit never reached the branch).
 
