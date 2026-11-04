@@ -12,7 +12,7 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
@@ -38,7 +38,7 @@ jobs:
             artifact: mdview-x86_64-pc-windows-msvc
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
@@ -52,7 +52,10 @@ jobs:
           mkdir -p dist
           cp "target/${{ matrix.target }}/release/mdview${ext}" dist/
           tar -C dist -czf "${{ matrix.artifact }}.tar.gz" "mdview${ext}"
-      - uses: actions/upload-artifact@v4
+      # v7 upload + v8 download 是一对（v8 的 direct-download 就是为 v7 的 direct-upload 加的），
+      # 一起升；v8 还把摘要不一致从警告改成了报错。都跑在 Node 24 上，官方 runner 会自动满
+      # 要求（>=2.327.1），不再报 Node 20 deprecated。
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact }}.tar.gz
@@ -64,7 +67,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
       - uses: softprops/action-gh-release@v2
@@ -81,7 +84,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: tag version must match Cargo.toml
         shell: bash
