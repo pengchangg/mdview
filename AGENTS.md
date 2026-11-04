@@ -5,7 +5,7 @@ A terminal Markdown previewer: pure Rust, no Node / browser / server. The crate 
 ## Commands
 
 ```sh
-cargo fmt --all --check                          # CI gates on this — run it before committing
+cargo fmt --all --check                          # CI gates on this; CI only runs on tags, so this is the pre-tag gate
 cargo clippy --all-targets -- -D warnings        # same gate: a warning is an error
 cargo test --all-targets                         # unit + snapshot + logic tests, no terminal needed
 INSTA_UPDATE=always cargo test --test render_snapshot   # re-baseline after a render change
@@ -51,5 +51,7 @@ One hard rule: **pure logic stays separate from terminal IO.** That split is the
 One command: `scripts/tag.sh 0.3.1`. It writes the version into `Cargo.toml` (the `[package]` one — deps use the same key, the script only replaces the first `version = ` line), syncs the root package's version line in `Cargo.lock`, commits, pushes the branch, then tags `v<version>` and pushes the tag. The tag triggers CI: `check` (fmt/clippy/test) → `build` (3 platforms) → `release` (GitHub Release with the tarballs) → `publish` (crates.io, using the repo secret `CARGO_REGISTRY_TOKEN`).
 
 Don't release by hand (bump → commit → tag). The version has to be right *inside* the tag, because CI builds the tarballs from the tag ref and the publish job only *checks* `tag == Cargo.toml` — it cannot repair a tag afterwards. v0.3.0 was tagged over `Cargo.toml = 0.2.0`, so those release tarballs print `mdview 0.2.0` and crates.io got nothing. Two rules the script encodes: refresh the lock with `cargo metadata`, never `cargo generate-lockfile` (that re-resolves and smuggles unrelated dep bumps — it moved `pest_stack_guard` 1.0.0 → 1.0.1 — into the release commit), and push the branch before the tag (one push with two refspecs can land a tag whose commit never reached the branch).
+
+CI triggers on `v*` tag pushes only — no branch runs, no PR runs. So `check` only goes red *after* you tagged, and nothing gets published when it does (`release` needs `build`, `build` needs `check`): `git tag -d vX && git push origin :refs/tags/vX`, fix, retag. That also means the local `fmt` / `clippy` / `test` trio is the only gate before a tag. If you ever want to lint `main` without releasing, add `workflow_dispatch:` — one line, and the `if:` guards on `release` / `publish` keep such a run away from crates.io.
 
 `cargo publish` runs without `--no-verify` on purpose: it unpacks and rebuilds the tarball, which is a local dry-run.
